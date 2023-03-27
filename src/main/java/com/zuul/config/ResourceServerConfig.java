@@ -46,23 +46,9 @@ public class ResourceServerConfig {
 
     @Autowired
     private CustomReactiveAuthorizationManager customReactiveAuthorizationManager;
-//    private final AuthorizationManager         authorizationManager;
-//    private final IgnoreUrlsConfig             ignoreUrlsConfig;
-////    private final RestfulAccessDeniedHandler   restfulAccessDeniedHandler;
-////    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
-////    private final IgnoreUrlsRemoveJwtFilter    ignoreUrlsRemoveJwtFilter;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) throws NoSuchAlgorithmException, IOException, InvalidKeySpecException {
-//        http.oauth2ResourceServer()
-//                .jwt()
-//                    .jwtAuthenticationConverter(jwtAuthenticationConverter()).jwtDecoder();
-
-        //自定义处理JWT请求头过期或签名错误的结果
-       // http.oauth2ResourceServer().authenticationEntryPoint(restAuthenticationEntryPoint);
-
-        //对白名单路径，直接移除JWT请求头
-       // http.addFilterBefore(ignoreUrlsRemoveJwtFilter, SecurityWebFiltersOrder.AUTHENTICATION);
         http.oauth2ResourceServer().jwt()
                 .jwtAuthenticationConverter(jwtAuthenticationConverter()).publicKey(rsaPublicKey());
          http.oauth2ResourceServer().accessDeniedHandler(new CustomServerAccessDeniedTkenHandler());
@@ -71,7 +57,7 @@ public class ResourceServerConfig {
                 .authorizeExchange()
                 //白名单配置
             //    .pathMatchers(ArrayUtil.toArray(ignoreUrlsConfig.getUrls(), String.class)).permitAll()
-                .pathMatchers("/oauth/**", "/favicon.ico").permitAll()
+                .pathMatchers("/user/oauth/**", "/favicon.ico").permitAll()
                 //鉴权管理器配置
                 .anyExchange().access(customReactiveAuthorizationManager)
                 .and()
@@ -127,13 +113,5 @@ public class ResourceServerConfig {
         RSAPublicKey rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
         return rsaPublicKey;
     }
-//    /**
-//     * 解码jwt
-//     */
-//    public ReactiveJwtDecoder jwtDecoder() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-//        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-//        RSAPublicKey rsaPublicKey = (RSAPublicKey) keyFactory.generatePublic(null);
-//        return
-//    }
 
 }

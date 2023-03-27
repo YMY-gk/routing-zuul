@@ -31,7 +31,7 @@ spring:
         - id: user
           uri: lb://user
           predicates:
-            - Path=/oauth/**
+            - Path=/user/**
   application:
     name: gateway-web
   #Redis配置

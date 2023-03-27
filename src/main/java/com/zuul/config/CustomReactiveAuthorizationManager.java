@@ -1,5 +1,6 @@
 package com.zuul.config;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -28,49 +30,45 @@ import java.util.Map;
 @Slf4j
 public class CustomReactiveAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
-    /**
-     * 此处保存的是资源对应的权限，可以从数据库中获取
-     */
-    private static final Map<String, String> AUTH_MAP = Maps.newConcurrentMap();
+    private final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
-    @PostConstruct
-    public void initAuthMap() {
-        AUTH_MAP.put("/user/findAllUsers", "user.userInfo");
-        AUTH_MAP.put("/user/addUser", "user");
-    }
     @Override
     public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext authorizationContext) {
         ServerWebExchange exchange = authorizationContext.getExchange();
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-
         // 带通配符的可以使用这个进行匹配
         PathMatcher pathMatcher = new AntPathMatcher();
 
-        String authorities = AUTH_MAP.get(path);
+        // 1、白名单，放开权限
+//        if (!StringUtils.hasText(authorities)) {
+//            //拦截处理
+//            return Mono.just(new AuthorizationDecision(false));
+//        }
+        // 2、白名单，放开权限
 
-        log.info("authentication:{}", authentication.filter(Authentication::isAuthenticated).block());
-        log.info("访问路径:[{}],所需要的权限是:[{}]", path, authorities);
 
-        //    预检请求放行
-        if (request.getMethod() == HttpMethod.OPTIONS) {
-            //放行处理
-            return Mono.just(new AuthorizationDecision(true));
-        }
-        // 不在权限范围内的url，全部拒绝
-        if (!StringUtils.hasText(authorities)) {
-            //拦截处理
-            return Mono.just(new AuthorizationDecision(false));
-        }
         //认证通过且角色匹配的用户可访问当前路径
-        return authentication
-                .filter(Authentication::isAuthenticated)
-                .flatMapIterable(Authentication::getAuthorities)
-                .map(GrantedAuthority::getAuthority)
-                .any(authorities::contains)
-                .map(AuthorizationDecision::new)
-                .defaultIfEmpty(new AuthorizationDecision(false));
+//        return authentication
+//                .filter(Authentication::isAuthenticated)
+//                .flatMapIterable(Authentication::getAuthorities)
+//                .map(GrantedAuthority::getAuthority)
+//                .map(AuthorizationDecision::new)
+//                .defaultIfEmpty(new AuthorizationDecision(false));
 
+        return authentication.map(auth -> {
+            Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
+            for (GrantedAuthority authority : authorities) {
+                String authorityAuthority = authority.getAuthority();
+                authorityAuthority = "/user/sys-company/get";
+                // 查询用户访问所需角色进行对比
+                if (antPathMatcher.match(authorityAuthority, path)) {
+                    log.info(String.format("用户请求API校验通过，GrantedAuthority:{%s}  Path:{%s} ", authorityAuthority, path));
+                    return new AuthorizationDecision(true);
+                }
+            }
+            return new AuthorizationDecision(false);
+        }).defaultIfEmpty(new AuthorizationDecision(false));
     }
 
 }
