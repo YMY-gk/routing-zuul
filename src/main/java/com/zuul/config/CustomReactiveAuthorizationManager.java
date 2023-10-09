@@ -18,6 +18,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.Collection;
 import java.util.Map;
 
@@ -37,7 +38,8 @@ public class CustomReactiveAuthorizationManager implements ReactiveAuthorization
         ServerWebExchange exchange = authorizationContext.getExchange();
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-        // 带通配符的可以使用这个进行匹配
+        log.info("请求路劲：{}",path);
+        // 带通配符的可以使用这个进行匹配/user/sys-user/list
         PathMatcher pathMatcher = new AntPathMatcher();
 
         // 1、白名单，放开权限
@@ -46,29 +48,26 @@ public class CustomReactiveAuthorizationManager implements ReactiveAuthorization
 //            return Mono.just(new AuthorizationDecision(false));
 //        }
         // 2、白名单，放开权限
-
+        //暂时放开权限
+        return  Mono.just(new AuthorizationDecision(true));
 
         //认证通过且角色匹配的用户可访问当前路径
-//        return authentication
-//                .filter(Authentication::isAuthenticated)
-//                .flatMapIterable(Authentication::getAuthorities)
-//                .map(GrantedAuthority::getAuthority)
-//                .map(AuthorizationDecision::new)
-//                .defaultIfEmpty(new AuthorizationDecision(false));
-
-        return authentication.map(auth -> {
-            Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
-            for (GrantedAuthority authority : authorities) {
-                String authorityAuthority = authority.getAuthority();
-                authorityAuthority = "/user/sys-company/get";
-                // 查询用户访问所需角色进行对比
-                if (antPathMatcher.match(authorityAuthority, path)) {
-                    log.info(String.format("用户请求API校验通过，GrantedAuthority:{%s}  Path:{%s} ", authorityAuthority, path));
-                    return new AuthorizationDecision(true);
-                }
-            }
-            return new AuthorizationDecision(false);
-        }).defaultIfEmpty(new AuthorizationDecision(false));
+//        return authentication.map(auth -> {
+//            Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
+//            Object principal = auth.getPrincipal();
+//            Object credentials = auth.getCredentials();
+//            Object getails = auth.getDetails();
+//            for (GrantedAuthority authority : authorities) {
+//                String authorityAuthority = authority.getAuthority();
+//                authorityAuthority = "/user/sys-company/get";
+//                // 查询用户访问所需角色进行对比
+//                if (antPathMatcher.match(authorityAuthority, path)) {
+//                    log.info(String.format("用户请求API校验通过，GrantedAuthority:{%s}  Path:{%s} ", authorityAuthority, path));
+//                    return new AuthorizationDecision(true);
+//                }
+//            }
+//            return new AuthorizationDecision(false);
+//        }).defaultIfEmpty(new AuthorizationDecision(false));
     }
 
 }

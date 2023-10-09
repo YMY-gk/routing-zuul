@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
         havingValue = "true", // 关闭日志请在youlai-gateway.yaml设置 log.enabled=false
         matchIfMissing = true  // true表示缺少log.enabled属性也会加载该bean
 )
-//@Component
+@Component
 @Slf4j
 public class GatewayLogFilter implements GlobalFilter, Ordered {
 
@@ -66,7 +66,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
         TraceLog traceLog = new TraceLog();
         traceLog.setRequestPath(requestPath);
         traceLog.setRequestMethod(requestMethod);
-        traceLog.setRequestTime(DateUtil.format(LocalDateTime.now(), DatePattern.NORM_DATETIME_MS_PATTERN));
+        traceLog.setRequestTime(DateUtil.format(LocalDateTime.now(), DatePattern.UTC_SIMPLE_MS_PATTERN));
 
         MediaType contentType = request.getHeaders().getContentType();
 
@@ -180,9 +180,9 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
                 if (body instanceof Flux) {
                     Date now = new Date();
-                    String responseTime = DateUtil.format(now, DatePattern.NORM_DATETIME_MS_PATTERN);
+                    String responseTime = DateUtil.format(now, DatePattern.UTC_SIMPLE_MS_PATTERN);
                     traceLog.setResponseTime(responseTime);
-                    long executeTime = DateUtil.betweenMs(DateUtil.parse(traceLog.getRequestTime(), DatePattern.NORM_DATETIME_MS_FORMATTER), now);
+                    long executeTime = DateUtil.betweenMs(DateUtil.parse(traceLog.getRequestTime(), DatePattern.UTC_SIMPLE_FORMAT), now);
                     traceLog.setExecuteTime(executeTime);
 
                     String originalResponseContentType = exchange.getAttribute(ServerWebExchangeUtils.ORIGINAL_RESPONSE_CONTENT_TYPE_ATTR);
@@ -266,7 +266,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
 
         public String toRequestString() {
             return
-                    "^^^^^^^^请求日志^^^^^^^^: " + requestMethod + ':' + requestPath + '\n'  +
+                    "\n请求日志: " + requestMethod + ':' + requestPath + '\n'  +
                             "查询参数:" + queryParams + '\n' +
                             "请求载荷:" + requestBody + '\n' +
                             "请求时间:" + requestTime;
@@ -274,7 +274,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
 
         public String toResponseString() {
             return
-                    "$$$$$$$$响应日志$$$$$$$$: " + requestMethod + ':' + requestPath + '\n' +
+                    "\n响应日志: " + requestMethod + ':' + requestPath + '\n' +
                             "请求时间:" + requestTime +  '\n' +
                             "响应时间:" + responseTime + '\n' +
                             "响应数据:" + responseBody + '\n' +
@@ -283,7 +283,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
 
         @Override
         public String toString() {
-            return "========网关请求响应日志========\n" +
+            return "\n========网关请求响应日志========\n" +
                     "请求路径:" + requestPath + '\n' +
                     "请求方法:" + requestMethod + '\n' +
                     "请求参数:" + requestBody + '\n' +
