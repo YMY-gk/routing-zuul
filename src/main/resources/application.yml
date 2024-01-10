@@ -6,22 +6,22 @@ spring:
           '[/**]': # 匹配所有请求
             allowedOrigins: "*" #跨域处理 允许所有的域
             allowedMethods: # 支持的方法
-              - GET
-              - POST
-              - PUT
-              - DELETE
+              - "*"
+            allowedHeaders:
+                - "*"
+            allowCredentials: true
       routes:
         - id: goods_route
           uri: lb://goods
           predicates:
             - Path=/goods/**
-          filters:
-            - StripPrefix=1  #(删除第一个路劲)
-            - name: RequestRateLimiter #请求数限流 名字不能随便写 ，使用默认的facatory
-              args:
-                key-resolver: "#{@ipKeyResolver}"
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 1
+#          filters:
+#            - StripPrefix=1  #(删除第一个路劲)
+#            - name: RequestRateLimiter #请求数限流 名字不能随便写 ，使用默认的facatory
+#              args:
+#                key-resolver: "#{@ipKeyResolver}"
+#                redis-rate-limiter.replenishRate: 1
+#                redis-rate-limiter.burstCapacity: 1
 #        - id: user_route
 #          uri: lb://user
 #          predicates:
@@ -36,15 +36,14 @@ spring:
     name: gateway-web
   #Redis配置
   redis:
-    host: 182.254.221.85
-    password: redis_6379
-    port: 6379
+    host: 110.41.135.108
+    port: 37690
     timeout: 5000
 server:
   port: 8001
 eureka:
   instance:
-    hostname: 127.0.0.1:8761
+    hostname: 110.41.135.108/eruka
     prefer-ip-address: true
   client:
     register-with-eureka: true   #是否将自己注册到eureka中

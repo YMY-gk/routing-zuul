@@ -36,7 +36,10 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 网关请求响应日志打印
@@ -47,7 +50,7 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(
         prefix = "log",
         name = {"enabled"},
-        havingValue = "true", // 关闭日志请在youlai-gateway.yaml设置 log.enabled=false
+        havingValue = "true", // 关闭日志请在yaml设置 log.enabled=false
         matchIfMissing = true  // true表示缺少log.enabled属性也会加载该bean
 )
 @Component
@@ -62,7 +65,6 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String requestPath = request.getPath().pathWithinApplication().value();
         String requestMethod = request.getMethodValue();
-
         TraceLog traceLog = new TraceLog();
         traceLog.setRequestPath(requestPath);
         traceLog.setRequestMethod(requestMethod);
@@ -132,7 +134,6 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
         headers.putAll(exchange.getRequest().getHeaders());
         headers.remove(HttpHeaders.CONTENT_LENGTH);
         CachedBodyOutputMessage outputMessage = new CachedBodyOutputMessage(exchange, headers);
-
         return bodyInserter.insert(outputMessage, new BodyInserterContext())
                 .then(Mono.defer(() -> {
                     ServerHttpRequest serverHttpRequest = serverHttpRequestDecorator(exchange, headers, outputMessage);
@@ -214,7 +215,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1;
+        return -2;
     }
 
 

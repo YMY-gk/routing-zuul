@@ -12,6 +12,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -33,14 +34,18 @@ public class TokenTransferFilter implements WebFilter {
         OBJECT_MAPPER.registerModule(new Jdk8Module());
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
     }
-
+    /**
+     * JWT令牌前缀
+     */
+    String JWT_PREFIX = "bearer ";
     @SneakyThrows
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String token =exchange.getRequest().getHeaders().get("Authorization").get(0);
-        Claims claims= JwtsUtils.parseJWT(token);
-        List<String> authorities=claims.get("authorities", List.class);
 
+        String token =exchange.getRequest().getHeaders().get("Authorization").get(0);
+        if (StringUtils.isEmpty(token)|| !token.startsWith(JWT_PREFIX)) {
+            return chain.filter(exchange);
+        }
         log.info("发发发发发发付付付付付",exchange.toString(),chain.toString());
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
@@ -48,7 +53,7 @@ public class TokenTransferFilter implements WebFilter {
                 .flatMap(authentication -> {
                     ServerHttpRequest request = exchange.getRequest();
                     request = request.mutate()
-                            .header("tokenInfo", toJson(authentication.getPrincipal()))
+                            .header("tokenInfo", toJson(authentication.getTokenAttributes()))
                             .build();
 
                     ServerWebExchange newExchange = exchange.mutate().request(request).build();

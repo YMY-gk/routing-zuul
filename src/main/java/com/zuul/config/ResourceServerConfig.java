@@ -2,6 +2,7 @@ package com.zuul.config;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.IoUtil;
+import com.zuul.Filter.TokenTransferFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -68,7 +70,7 @@ public class ResourceServerConfig {
                 .authenticationEntryPoint(new CustomServerAuthenticationEntryPoint())
                 .and()
                 .csrf().disable()
-               // .addFilterAfter(new TokenTransferFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterAfter(new TokenTransferFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
         ;
 
         return http.build();

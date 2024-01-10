@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.nimbusds.jose.JWSObject;
+import com.zuul.utils.JwtsUtils;
+import io.jsonwebtoken.Claims;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
@@ -38,7 +40,7 @@ public class GatewaySecurityFilter implements GlobalFilter, Ordered {
     /**
      * JWT令牌前缀
      */
-    String JWT_PREFIX = "Bearer ";
+    String JWT_PREFIX = "bearer ";
 
     /**
      * 认证请求头key
@@ -60,8 +62,6 @@ public class GatewaySecurityFilter implements GlobalFilter, Ordered {
                 return chain.filter(exchange);
             }
         }
-
-
         // 非JWT放行不做后续解析处理
         String token = request.getHeaders().getFirst(AUTHORIZATION_KEY);
         if (StrUtil.isBlank(token) || !StrUtil.startWithIgnoreCase(token, JWT_PREFIX)) {
@@ -70,6 +70,7 @@ public class GatewaySecurityFilter implements GlobalFilter, Ordered {
 
         // 解析JWT获取jti，以jti为key判断redis的黑名单列表是否存在，存在则拦截访问
         token = StrUtil.replaceIgnoreCase(token, JWT_PREFIX, Strings.EMPTY);
+        JWSObject jwsObject =  JWSObject.parse(token);
         String payload = StrUtil.toString(JWSObject.parse(token).getPayload());
         JSONObject jsonObject = JSONUtil.parseObj(payload);
         // 存在token且不在黑名单中，request写入JWT的载体信息传递给微服务
@@ -79,9 +80,8 @@ public class GatewaySecurityFilter implements GlobalFilter, Ordered {
         exchange = exchange.mutate().request(request).build();
         return chain.filter(exchange);
     }
-
     @Override
     public int getOrder() {
-        return 0;
+        return 3;
     }
 }
